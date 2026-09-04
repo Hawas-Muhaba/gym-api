@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+GymSystem.API/appsettings.json
+GymSystem.API/appsettings.Development.json
