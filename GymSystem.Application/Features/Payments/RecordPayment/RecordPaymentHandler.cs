@@ -17,6 +17,9 @@ public class RecordPaymentHandler : IRequestHandler<RecordPaymentCommand, int>
             .FirstOrDefaultAsync(a => a.Id == request.AppointmentId, cancellationToken)
             ?? throw new KeyNotFoundException("Appointment not found.");
 
+        if (await _context.Payments.AnyAsync(p => p.AppointmentId == request.AppointmentId, cancellationToken))
+            throw new InvalidOperationException("A payment has already been recorded for this appointment.");
+
         // The core business rule: commission = payment amount × that staff member's rate.
         // No manual calculation needed anywhere else in the system — it happens exactly once, here.
         var commission = request.Amount * appointment.Staff.CommissionRate;
@@ -28,6 +31,8 @@ public class RecordPaymentHandler : IRequestHandler<RecordPaymentCommand, int>
             StaffCommissionAmount = commission,
             PaidAt = DateTime.UtcNow
         };
+
+        appointment.Status = Domain.Enums.BookingStatus.Completed;
 
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync(cancellationToken);

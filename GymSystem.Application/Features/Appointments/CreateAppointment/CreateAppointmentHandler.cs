@@ -9,14 +9,17 @@ public class CreateAppointmentHandler : IRequestHandler<CreateAppointmentCommand
 {
     private readonly IApplicationDbContext _context;
     private readonly IBookingNotifier _notifier;
+    private readonly ICurrentUserService _currentUserService;
 
-    public CreateAppointmentHandler(IApplicationDbContext context, IBookingNotifier notifier)
+    public CreateAppointmentHandler(
+        IApplicationDbContext context,
+        IBookingNotifier notifier,
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _notifier = notifier;
+        _currentUserService = currentUserService;
     }
-
-   
 
 public async Task<int> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
 {
@@ -43,6 +46,9 @@ public async Task<int> Handle(CreateAppointmentCommand request, CancellationToke
     if (conflict)
         throw new InvalidOperationException("This staff member already has an appointment at that time.");
 
+    var isStaffOrManager = _currentUserService.IsInRole("Staff") || _currentUserService.IsInRole("Manager");
+    var initialStatus = isStaffOrManager ? BookingStatus.Confirmed : BookingStatus.Pending;
+
     var appointment = new Appointment
     {
         ClientId = request.ClientId,
@@ -50,7 +56,7 @@ public async Task<int> Handle(CreateAppointmentCommand request, CancellationToke
         ServiceId = request.ServiceId,
         StartTime = startTimeUtc,
         EndTime = endTimeUtc,
-        Status = BookingStatus.Confirmed
+        Status = initialStatus
     };
 
     _context.Appointments.Add(appointment);

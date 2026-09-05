@@ -14,4 +14,10 @@ public class CurrentUserService : ICurrentUserService
 
     public string? UserId =>
         _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    public string? Role =>
+        _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
+
+    public bool IsInRole(string role) =>
+        _httpContextAccessor.HttpContext?.User?.IsInRole(role) ?? false;
 }
